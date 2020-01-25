@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+     <meta name="viewport" content="width=device-width">
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" type="text/css" href="/Users/juangonzalez/Desktop/INVIERNO/DesarrolloWEB/blog/public/css/index.css">
+    <title>Blog</title>
+  </head>
+  <body>
+  	<main>
+  		<h1>Blog</h1>
+
+      <form id = "buscar">
+        <input type="text" id="autor" placeholder="Ingresa Autor">
+        <input type="submit" id = "submit" value="BUSCAR">
+      </form>
+      <div id = "todosC"> 
+      <h2> COMENTARIOS </h2>
+      <div id = "comentarios">
+        
+      </div>
+    </div>
+  	</main>
+
+    <form id = "nuevoC">
+        <h3> Escribir Nuevo Comentario</h3>
+
+        <div><input type="text" id="nuevoT" placeholder="Ingresa Titulo"></div>
+        <div><textarea id="nuevoCo" placeholder="Ingresa Comentario"></textarea></div>
+        <input type="text" id="nuevoA" placeholder="Ingresa Autor">
+         <input type="submit" id = "submitN" value="NUEVO">
+
+    </form>
+
+    <form id = "actualizarC">
+        <h3> Actualizar Comentario</h3>
+
+        <input type="text" id="actualizarId" placeholder="Ingresa Id">
+        <div><input type="text" id="actualizarT" placeholder="Ingresa Titulo"></div>
+        <div><textarea id="actualizarCo" placeholder="Ingresa Comentario"></textarea></div>
+        <input type="text" id="actualizarA" placeholder="Ingresa Autor">
+         <input type="submit" id = "submitA" value="ACTUALIZAR">
+
+    </form>
+
+     <form id = "removerC">
+        <h3> Remover Comentario</h3>
+
+        <input type="text" id="removerId" placeholder="Ingresa Id">
+         <input type="submit" id = "submitR" value="REMOVER">
+
+    </form>
+      <script type="text/javascript" src="/Users/juangonzalez/Desktop/INVIERNO/DesarrolloWEB/blog/public/js/index.js"></script>
+  </body>
+  </html>
