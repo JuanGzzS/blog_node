@@ -7,8 +7,13 @@ let morgan = require( "morgan" );
 
 let bodyParser = require("body-parser");
 
-let jsonParser = bodyParser.json();
+let mongoose = require( 'mongoose' );
 
+let { ComentList } = require( './model' );
+
+let {DATABASE_URL, PORT} = require( './config' );
+
+let jsonParser = bodyParser.json();
 
 let uuid = require("uuid");
 
@@ -55,7 +60,15 @@ let comentarios = [{
 app.get('/blog-api/comentarios', (req,res) => { // req trae la infomración que trae del content ( si tiene headers, etc)... res es para mandar una respuesta 
 
 
-	res.status( 200 ).json( comentarios );
+	ComentList.getAll()
+        .then( ComentList => {
+            return res.status( 200 ).json( ComentList );
+        })
+        .catch( error => {
+            console.log(error);
+            res.statusMessage = "Hubo un error de conexion con la BD."
+            return res.status( 500 ).send();
+        });
 
 });
 
@@ -102,11 +115,11 @@ app.post('/blog-api/nuevo-comentario',jsonParser,(req,res)=>{
 		let objeto = req.body;
 		let dia = new Date();
 
-		let autor = req.body.autor;
-		let contenido = req.body.contenido;
-		let titulo = req.body.titulo;
+		let autorN = req.body.autor;
+		let contenidoN = req.body.contenido;
+		let tituloN = req.body.titulo;
 
-		if (autor == '' || contenido == '' || titulo == '' ){
+		if (autorN == '' || contenidoN == '' || tituloN == '' ){
 
 		res.statusMessage = "Falto uno de los elementos del objeto";
 		return res.status(406).json({});
@@ -118,8 +131,26 @@ app.post('/blog-api/nuevo-comentario',jsonParser,(req,res)=>{
 
 			console.log(objeto);
 			comentarios.push(objeto);
-			res.statusMessage = "COMENTARIO AGREGADO :)";
-			return res.status(201).json({objeto});
+
+			let newComent = {
+
+				id : uuid.v4(),
+				titulo : tituloN,
+				contenido : contenidoN,
+				autor : autorN,
+				fecha : dia
+			}
+
+
+			ComentList.create( newComent)
+        		.then( ComentList => {
+            	return res.status( 200 ).json( ComentList );
+        	})
+        		.catch( error => {
+            	console.log(error);
+            	res.statusMessage = "Hubo un error de conexion con la BD."
+            	return res.status( 500 ).send();
+        });
 
 		}		
 
@@ -131,31 +162,23 @@ app.delete('/blog-api/remover-comentario/:id',jsonParser, (req,res)=> {
 
 		 let idBorrar = req.params.id;
 
-		 let result = comentarios.find( (elemento) => {
+		 let objRemove = { id : idBorrar};
 
-			if (elemento.id == idBorrar){
+		 console.log(idBorrar);
+		 console.log(objRemove);
 
-				console.log("Se encontro un id igual");
-				return elemento;
-			}
 		
-		});
 
-		 if (result){
+		 	 ComentList.remove(objRemove) 
+    			.then( ComentList => {
+            	return res.status( 201 ).json( ComentList );
+        	})
+        		.catch( error => {
+            	res.statusMessage = "Error en conexión con la base de datos";
+            	return res.status( 500 ).json( error );
+        });
 
-		 	comentarios = comentarios.filter((elemento) => {
 
-		 		if ( result.id != elemento.id){
-		 			return elemento
-		 		}
-		 	});
-
-		 		return res.status(200).json({});
-		 }else{
-
-		 	res.statusMessage = "No existe comentario con ese id";
-		 	return res.status(404).json({})
-		 }
 	
 });
 
@@ -165,6 +188,8 @@ app.put('/blog-api/actualizar-comentario/:id',jsonParser, (req,res)=> {
 
 		 let idActualizar = req.params.id;
 
+
+
 		 if (idActualizar == undefined){
 
 		 	res.statusMessage = "No ha enviado id en request";
@@ -172,14 +197,16 @@ app.put('/blog-api/actualizar-comentario/:id',jsonParser, (req,res)=> {
 
 		 }
 	
-		let idObjeto = req.params.id;
+		let idV = req.params.id;
 		let noTitulo = req.body.titulo;
 		let noContenido = req.body.contenido;
 		let noAutor = req.body.autor;
 
-		console.log(idObjeto);
+	
 
-		if ( idActualizar != idObjeto){
+	
+
+		if ( idActualizar != idV){
 
 			res.statusMessage = "El id de REQUEST no coincide con id de Parametro(Objeto)";
 		 	return res.status(409).json({})
@@ -193,30 +220,70 @@ app.put('/blog-api/actualizar-comentario/:id',jsonParser, (req,res)=> {
 		 	return res.status(406).json({})
 		}
 		
-		let result = comentarios.find((elemento) =>{
+		let dia = new Date();
+		let actualizar = req.body;
+		let actComent = { id : idV };
 
-				if (idObjeto == elemento.id){
 
-					elemento.titulo = req.body.titulo;
-					elemento.contenido = req.body.contenido;
-					elemento.autor = req.body.autor;
+		console.log(actComent);
+		console.log(actualizar)
+			
 
-					
-				}
-				
-				
-		});
+		ComentList.update(actComent, actualizar) 
+   		.then( ComentList => {
+            	return res.status( 201 ).json( ComentList );
+        	})
+        	.catch( error => {
+            	res.statusMessage = "Error en conexión con la base de datos";
+            	return res.status( 500 ).json( error );
+        	});
 
-		return res.status(202).json(result);
 
 
 });
 
 
-app.listen( 8081,() => {  //Requiere dos parametros, numero de puerto en que corre y funcion anonima
+let server;
 
-	console.log("Servidor corriendo en puerto 8081");
+function runServer(port, databaseUrl){
+	return new Promise( (resolve, reject ) => {
+		mongoose.connect(databaseUrl, response => {
+			if ( response ){
+				return reject(response);
+			}
+			else{
+				server = app.listen(port, () => {
+					console.log( "App is running on port " + port );
+					resolve();
+				})
+				.on( 'error', err => {
+					mongoose.disconnect();
+					return reject(err);
+				})
+			}
+		});
+	});
+}
 
-}); 
+function closeServer(){
+	return mongoose.disconnect()
+		.then(() => {
+			return new Promise((resolve, reject) => {
+				console.log('Closing the server');
+				server.close( err => {
+					if (err){
+						return reject(err);
+					}
+					else{
+						resolve();
+					}
+				});
+			});
+		});
+}
+
+runServer( PORT, DATABASE_URL );
+
+module.exports = { app, runServer, closeServer }
 
 
